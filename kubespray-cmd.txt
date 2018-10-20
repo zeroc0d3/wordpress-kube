@@ -1,0 +1,405 @@
+## Play Kubernetes
+----------------------------
+### Deploy
+```
+ansible-playbook -i inventory/mykube/hosts.ini --become --become-user=root cluster.yml --flush-cache \
+   --private-key=/home/user/.ssh/id_rsa \
+   --limit node1,node2
+```
+
+### Reset
+```
+ansible-playbook -i inventory/mykube/hosts.ini --become --become-user=root reset.yml --flush-cache \
+   --private-key=/home/user/.ssh/id_rsa \
+   --limit node1,node2
+```
+
+### Remove-Node
+```
+ansible-playbook -i inventory/mykube/hosts.ini --become --become-user=root remove-node.yml --flush-cache \
+   --private-key=/home/user/.ssh/id_rsa \
+   --limit node1,node2
+```
+
+## Deploy Kubernetes
+----------------------------
+```
+ansible-playbook -i inventory/mykube/hosts.ini --become --become-user=root cluster.yml --flush-cache \
+   --private-key=/home/user/.ssh/id_rsa \
+   --limit node1,node2
+```
+
+## Check Master & Nodes
+----------------------------
+```
+ssh root@159.65.132.34
+
+root@node1:~# date
+Sat Oct 20 03:09:12 UTC 2018
+root@node1:~# kubectl get nodes
+NAME    STATUS   ROLES    AGE     VERSION
+node1   Ready    master   6m34s   v1.12.1
+node2   Ready    node     6m33s   v1.12.1
+
+root@node1:~# kubectl get po --all-namespaces
+NAMESPACE     NAME                                       READY   STATUS    RESTARTS   AGE
+kube-system   calico-kube-controllers-75ff955876-xzfpn   1/1     Running   0          4m52s
+kube-system   calico-node-dv4wd                          1/1     Running   0          5m8s
+kube-system   calico-node-rxqlx                          1/1     Running   0          5m8s
+kube-system   kube-apiserver-node1                       1/1     Running   0          5m47s
+kube-system   kube-controller-manager-node1              1/1     Running   0          6m25s
+kube-system   kube-dns-5bff646c-nchbw                    3/3     Running   0          4m13s
+kube-system   kube-dns-5bff646c-tw66v                    0/3     Pending   0          4m1s
+kube-system   kube-proxy-node1                           1/1     Running   0          6m2s
+kube-system   kube-proxy-node2                           1/1     Running   0          6m11s
+kube-system   kube-scheduler-node1                       1/1     Running   0          6m30s
+kube-system   kubedns-autoscaler-d4fc847bf-q4th5         1/1     Running   0          4m8s
+kube-system   kubernetes-dashboard-5db4d9f45f-sgl5s      1/1     Running   0          4m3s
+kube-system   nginx-proxy-node2                          1/1     Running   0          6m6s
+```
+
+## Create Access Login Dashboard
+----------------------------
+```
+cat <<EOF | kubectl create -f -
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-user
+  namespace: kube-system
+EOF
+```
+
+```
+cat <<EOF | kubectl create -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-user
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: admin-user
+  namespace: kube-system
+EOF
+```
+
+## Check Secret Token
+----------------------------
+```
+root@node1:~# kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
+Name:         admin-user-token-mc8mv
+Namespace:    kube-system
+Labels:       <none>
+Annotations:  kubernetes.io/service-account.name: admin-user
+              kubernetes.io/service-account.uid: d5e21f4d-d415-11e8-89be-c248816bee84
+
+Type:  kubernetes.io/service-account-token
+
+Data
+====
+token:      eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJhZG1pbi11c2VyLXRva2VuLW1jOG12Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImFkbWluLXVzZXIiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiJkNWUyMWY0ZC1kNDE1LTExZTgtODliZS1jMjQ4ODE2YmVlODQiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6a3ViZS1zeXN0ZW06YWRtaW4tdXNlciJ9.htCbU5qpWdM8QnOWDWSKRGnyMs5IVZ_-R0k2IrglSg9GjG7WMuY3BML5YYngVQN1tS6pkgfuHW0xgsS98gc5JveTUvjNfgL2sB0ht2LOx5RZ1qCV6sSWt95nqH_0fhSst2V-54CIOY2hmvTZZFkUpgCXEcbRGmFbqHHw3bJ809YfkYR8sDwIeVCwqmrZLg9GekTz0HqYu_7Yk-ct7dFOEwfrD8gxNY-uvFzS6XVHBfU9s_OW1UpKeVyI6GY5Z8TPetAWq8C1kzrKYe105gp6FahA859ntA5tezlnSAal1HC9hrnyKu-m-N_VP0GHEZ8waeqpXyIrom11ggVq_7JwMg
+ca.crt:     1090 bytes
+namespace:  11 bytes
+
+```
+
+## Edit Services
+----------------------------
+```
+root@node1:~# kubectl -n kube-system edit service kubernetes-dashboard
+
+Change:
+-------
+spec:
+  ...
+  type: ClusterIP
+  ...
+
+To:
+-------
+spec:
+  ...
+  type: NodePort
+  ...
+```
+
+## Check Services
+----------------------------
+```
+root@node1:~# kubectl -n kube-system get service kubernetes-dashboard
+NAME                   TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)         AGE
+kubernetes-dashboard   NodePort   10.233.30.234   <none>        443:31376/TCP   10m
+```
+
+* Login Dashboard
+----------------------------
+URL:
+https://<master_ip>:<master_port>
+https://159.65.132.34:31376
+
+Token:
+```
+eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJhZG1pbi11c2VyLXRva2VuLW1jOG12Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImFkbWluLXVzZXIiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiJkNWUyMWY0ZC1kNDE1LTExZTgtODliZS1jMjQ4ODE2YmVlODQiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6a3ViZS1zeXN0ZW06YWRtaW4tdXNlciJ9.htCbU5qpWdM8QnOWDWSKRGnyMs5IVZ_-R0k2IrglSg9GjG7WMuY3BML5YYngVQN1tS6pkgfuHW0xgsS98gc5JveTUvjNfgL2sB0ht2LOx5RZ1qCV6sSWt95nqH_0fhSst2V-54CIOY2hmvTZZFkUpgCXEcbRGmFbqHHw3bJ809YfkYR8sDwIeVCwqmrZLg9GekTz0HqYu_7Yk-ct7dFOEwfrD8gxNY-uvFzS6XVHBfU9s_OW1UpKeVyI6GY5Z8TPetAWq8C1kzrKYe105gp6FahA859ntA5tezlnSAal1HC9hrnyKu-m-N_VP0GHEZ8waeqpXyIrom11ggVq_7JwMg
+```
+
+----------------------------------------------------------
+
+Install Wordpress
+
+## Create MySQL Secret, File: `mysql-secret.yml`
+----------------------------
+```
+root@node1:~# echo -n 'mys3cr3t' | base64
+>> bXlzM2NyM3Q=
+```
+```
+root@node1:~# nano yaml_file/mysql-secret.yml
+{
+  "kind": "Secret",
+  "apiVersion": "v1",
+  "metadata": {
+    "namespace": "wordpress",
+    "name": "mysql-pass",
+    "selfLink": "/api/v1/namespaces/default/secrets/mysql-pass",
+    "uid": "519505b5-d418-11e8-89be-c248816bee84",
+    "resourceVersion": "2630",
+    "creationTimestamp": "2018-10-20T03:29:14Z"
+  },
+  "data": {
+    "password": "bXlzM2NyM3Q="
+  },
+  "type": "Opaque"
+}
+```
+root@node1:~#   kubectl create -f yaml_file/mysql-secret.yml
+
+root@node1:~#   kubectl get secrets
+NAME                  TYPE                                  DATA   AGE
+default-token-rjf5w   kubernetes.io/service-account-token   3      26m
+mysql-pass            Opaque                                1      8s
+```
+
+## Create Persistant-Volume Wordpress & MySQL, File: `pv-wordpress-mysql.yml`
+----------------------------
+```
+root@node1:~# nano yaml_file/pv-wordpress-mysql.yml
+```
+```
+# Create PersistentVolume
+# change the ip of NFS server
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: wordpress
+  name: wordpress-persistent-storage
+  labels:
+    app: wordpress
+    tier: frontend
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 159.65.132.34
+    # Exported path of your NFS server
+    path: "/html"
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: wordpress
+  name: mysql-persistent-storage
+  labels:
+    app: wordpress
+    tier: mysql
+spec:
+  capacity:
+    storage: 10Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 159.65.132.34
+    # Exported path of your NFS server
+    path: "/mysql"
+```
+```
+kubectl create -f yaml_file/pv-wordpress-mysql.yml
+```
+
+## Create Persistant-Volume-Claim Wordpress & MySQL, File: `pvc-wordpress-mysql.yml`
+----------------------------
+```
+root@node1:~# nano yaml_file/pvc-wordpress-mysql.yml
+```
+```
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: wordpress
+  name: mysql-persistent-storage
+  labels:
+    app: wordpress
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 6Gi
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  namespace: wordpress
+  name: wordpress-persistent-storage
+  labels:
+    app: wordpress
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 6Gi
+```
+```
+kubectl create -f yaml_file/pvc-wordpress-mysql.yml
+```
+
+## Create MySQL Deployment, File: `mysql-deployment.yaml`
+----------------------------
+```
+root@node1:~# nano yaml_file/mysql-deployment.yml
+```
+```
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: wordpress
+  name: wordpress-mysql   # will be used as a value in
+  labels:                 # WORDPRESS_DB_HOST in wordpress-deploy.yml
+    app: wordpress
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: wordpress
+    tier: mysql
+  clusterIP: None
+---
+apiVersion:  apps/v1beta2 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  namespace: wordpress
+  name: wordpress-mysql
+  labels:
+    app: wordpress
+spec:
+  selector:
+    matchLabels:
+      app: wordpress
+      tier: mysql
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        tier: mysql
+    spec:
+      containers:
+      - image: mysql:5.6
+        name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass        # the one generated before in secret.yml
+              key: password
+        ports:
+        - containerPort: 3306
+          name: mysql
+        volumeMounts:
+        - name: mysql-persistent-storage  # which data will be stored
+          mountPath: "/var/lib/mysql"
+      volumes:
+      - name: mysql-persistent-storage    # PVC
+        persistentVolumeClaim:
+          claimName: mysql-persistent-storage
+```
+```
+kubectl create -f yaml_file/mysql-deployment.yml
+```
+
+## Create Wordpress Deployment, File: `wordpress-deployment.yaml`
+----------------------------
+```
+root@node1:~# nano yaml_file/mysql-deployment.yml
+```
+```
+# create a service for wordpress
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: wordpress
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  ports:
+    - port: 80
+  selector:
+    app: wordpress
+    tier: frontend
+  type: ClusterIP
+---
+apiVersion: apps/v1beta2 # for versions before 1.9.0 use apps/v1beta2
+kind: Deployment
+metadata:
+  namespace: wordpress
+  name: wordpress
+  labels:
+    app: wordpress
+spec:
+  selector:
+    matchLabels:
+      app: wordpress
+      tier: frontend
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      labels:
+        app: wordpress
+        tier: frontend
+    spec:
+      containers:
+      - image: wordpress:4.8-apache
+        name: wordpress
+        env:
+        - name: WORDPRESS_DB_HOST
+          value: wordpress-mysql
+        - name: WORDPRESS_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-pass          # generated before in secret.yml
+              key: password
+        ports:
+        - containerPort: 80
+          name: wordpress
+        volumeMounts:
+        - name: wordpress-persistent-storage
+          mountPath: "/var/www/html"          # which data will be stored
+      volumes:
+      - name: wordpress-persistent-storage
+        persistentVolumeClaim:
+          claimName: wordpress-persistent-storage
+```
+```
+kubectl create -f yaml_file/wordpress-deployment.yml
+```
