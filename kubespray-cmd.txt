@@ -91,20 +91,19 @@ EOF
 ----------------------------
 ```
 root@node1:~# kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
-Name:         admin-user-token-mc8mv
+Name:         admin-user-token-kdjlm
 Namespace:    kube-system
 Labels:       <none>
 Annotations:  kubernetes.io/service-account.name: admin-user
-              kubernetes.io/service-account.uid: d5e21f4d-d415-11e8-89be-c248816bee84
+              kubernetes.io/service-account.uid: 3e3ea30e-d44d-11e8-851d-c248816bee84
 
 Type:  kubernetes.io/service-account-token
 
 Data
 ====
-token:      eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJhZG1pbi11c2VyLXRva2VuLW1jOG12Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImFkbWluLXVzZXIiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiJkNWUyMWY0ZC1kNDE1LTExZTgtODliZS1jMjQ4ODE2YmVlODQiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6a3ViZS1zeXN0ZW06YWRtaW4tdXNlciJ9.htCbU5qpWdM8QnOWDWSKRGnyMs5IVZ_-R0k2IrglSg9GjG7WMuY3BML5YYngVQN1tS6pkgfuHW0xgsS98gc5JveTUvjNfgL2sB0ht2LOx5RZ1qCV6sSWt95nqH_0fhSst2V-54CIOY2hmvTZZFkUpgCXEcbRGmFbqHHw3bJ809YfkYR8sDwIeVCwqmrZLg9GekTz0HqYu_7Yk-ct7dFOEwfrD8gxNY-uvFzS6XVHBfU9s_OW1UpKeVyI6GY5Z8TPetAWq8C1kzrKYe105gp6FahA859ntA5tezlnSAal1HC9hrnyKu-m-N_VP0GHEZ8waeqpXyIrom11ggVq_7JwMg
 ca.crt:     1090 bytes
 namespace:  11 bytes
-
+token:      eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJhZG1pbi11c2VyLXRva2VuLWtkamxtIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImFkbWluLXVzZXIiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiIzZTNlYTMwZS1kNDRkLTExZTgtODUxZC1jMjQ4ODE2YmVlODQiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6a3ViZS1zeXN0ZW06YWRtaW4tdXNlciJ9.Za6yQA9PfLNlC59f11qPATADLA8zJSdy1bLYYpLHkL8oBMXlFPMcpsTcXNVwEIqcyDpPe2vfAXChnB9wTdMwRfgRjClSRdNZh8Jqp3k5Xl15ThxJ13zKfQkcSLwKlleQ04m7tyD141p98aSZLjQkQ7NBuaodnBME5BrzB8xEnkWF1wY3Zdt7dTnRRv26GeYj5AyyrWMNLTHvvpk8Z4vBvUhWsUe2eaSlO8zlAR5QjTofldpPIS0Jezuar7zjyJwHmNPPRSG4OXZ-X0DIITzi0z4cmHKnng7hItFGqTZkbGylXNpcA2ltKXikuIrdc4Rv0DhCYHFr7dEvQWY_MAfLcw
 ```
 
 ## Edit Services
@@ -131,24 +130,31 @@ spec:
 ----------------------------
 ```
 root@node1:~# kubectl -n kube-system get service kubernetes-dashboard
-NAME                   TYPE       CLUSTER-IP      EXTERNAL-IP   PORT(S)         AGE
-kubernetes-dashboard   NodePort   10.233.30.234   <none>        443:31376/TCP   10m
+NAME                   TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)         AGE
+kubernetes-dashboard   NodePort   10.233.63.95   <none>        443:30114/TCP   3m49s
 ```
 
 * Login Dashboard
 ----------------------------
 URL:
 https://<master_ip>:<master_port>
-https://159.65.132.34:31376
+https://159.65.132.34:30114
 
 Token:
 ```
-eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJhZG1pbi11c2VyLXRva2VuLW1jOG12Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImFkbWluLXVzZXIiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiJkNWUyMWY0ZC1kNDE1LTExZTgtODliZS1jMjQ4ODE2YmVlODQiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6a3ViZS1zeXN0ZW06YWRtaW4tdXNlciJ9.htCbU5qpWdM8QnOWDWSKRGnyMs5IVZ_-R0k2IrglSg9GjG7WMuY3BML5YYngVQN1tS6pkgfuHW0xgsS98gc5JveTUvjNfgL2sB0ht2LOx5RZ1qCV6sSWt95nqH_0fhSst2V-54CIOY2hmvTZZFkUpgCXEcbRGmFbqHHw3bJ809YfkYR8sDwIeVCwqmrZLg9GekTz0HqYu_7Yk-ct7dFOEwfrD8gxNY-uvFzS6XVHBfU9s_OW1UpKeVyI6GY5Z8TPetAWq8C1kzrKYe105gp6FahA859ntA5tezlnSAal1HC9hrnyKu-m-N_VP0GHEZ8waeqpXyIrom11ggVq_7JwMg
+eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2VhY2NvdW50Iiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9uYW1lc3BhY2UiOiJrdWJlLXN5c3RlbSIsImt1YmVybmV0ZXMuaW8vc2VydmljZWFjY291bnQvc2VjcmV0Lm5hbWUiOiJhZG1pbi11c2VyLXRva2VuLWtkamxtIiwia3ViZXJuZXRlcy5pby9zZXJ2aWNlYWNjb3VudC9zZXJ2aWNlLWFjY291bnQubmFtZSI6ImFkbWluLXVzZXIiLCJrdWJlcm5ldGVzLmlvL3NlcnZpY2VhY2NvdW50L3NlcnZpY2UtYWNjb3VudC51aWQiOiIzZTNlYTMwZS1kNDRkLTExZTgtODUxZC1jMjQ4ODE2YmVlODQiLCJzdWIiOiJzeXN0ZW06c2VydmljZWFjY291bnQ6a3ViZS1zeXN0ZW06YWRtaW4tdXNlciJ9.Za6yQA9PfLNlC59f11qPATADLA8zJSdy1bLYYpLHkL8oBMXlFPMcpsTcXNVwEIqcyDpPe2vfAXChnB9wTdMwRfgRjClSRdNZh8Jqp3k5Xl15ThxJ13zKfQkcSLwKlleQ04m7tyD141p98aSZLjQkQ7NBuaodnBME5BrzB8xEnkWF1wY3Zdt7dTnRRv26GeYj5AyyrWMNLTHvvpk8Z4vBvUhWsUe2eaSlO8zlAR5QjTofldpPIS0Jezuar7zjyJwHmNPPRSG4OXZ-X0DIITzi0z4cmHKnng7hItFGqTZkbGylXNpcA2ltKXikuIrdc4Rv0DhCYHFr7dEvQWY_MAfLcw
 ```
 
 ----------------------------------------------------------
 
 Install Wordpress
+
+## Create Namespace
+```
+kubectl create namespace <namespace name>
+----------
+root@node1:~# kubectl create namespace wordpress
+```
 
 ## Create MySQL Secret, File: `mysql-secret.yml`
 ----------------------------
@@ -158,9 +164,11 @@ root@node1:~# echo -n 'mys3cr3t' | base64
 ```
 ```
 root@node1:~# nano yaml_file/mysql-secret.yml
+```
+```
 {
-  "kind": "Secret",
   "apiVersion": "v1",
+  "kind": "Secret",
   "metadata": {
     "namespace": "wordpress",
     "name": "mysql-pass",
