@@ -1,0 +1,87 @@
+HOST (159.65.132.34)
+--------------------------
+sudo apt-get update
+sudo apt-get install nfs-kernel-server
+
+sudo mkdir /var/nfs/general -p
+ls -la /var/nfs/general
+```
+drwxr-xr-x 2 nobody nogroup 4096 Oct 20 10:11 .
+drwxr-xr-x 3 root   root    4096 Oct 20 10:02 ..
+```
+sudo chown nobody:nogroup /var/nfs/general
+
+sudo nano /etc/exports
+```
+/var/nfs/general   178.128.25.251(rw,sync,no_subtree_check)
+/home              178.128.25.251(rw,sync,no_root_squash,no_subtree_check)
+```
+
+sudo systemctl restart nfs-kernel-server
+sudo ufw enable
+ufw allow "OpenSSH"
+
+sudo ufw allow from 178.128.25.251 to any port nfs
+sudo ufw status
+```
+Status: active
+
+To                         Action      From
+--                         ------      ----
+2049                       ALLOW       178.128.25.251
+OpenSSH                    ALLOW       Anywhere
+OpenSSH (v6)               ALLOW       Anywhere (v6)
+```
+
+
+CLIENT (178.128.25.251)
+--------------------------
+sudo apt-get update
+sudo apt-get install nfs-common
+
+sudo ufw enable
+ufw allow "OpenSSH"
+
+sudo mkdir -p /nfs/general
+sudo mkdir -p /nfs/home
+
+sudo mount 159.65.132.34:/var/nfs/general /nfs/general
+sudo mount 159.65.132.34:/home /nfs/home
+
+df -h
+```
+Filesystem                      Size  Used Avail Use% Mounted on
+udev                            992M     0  992M   0% /dev
+tmpfs                           201M  6.1M  194M   4% /run
+/dev/vda1                        49G  3.7G   45G   8% /
+...
+159.65.132.34:/var/nfs/general   49G  3.6G   45G   8% /nfs/general
+159.65.132.34:/home              49G  3.6G   45G   8% /nfs/home
+...
+```
+
+du -sh /nfs/home
+```
+4.0K	/nfs/home
+```
+
+## Testing ##
+sudo touch /nfs/general/general.test
+ls -l /nfs/general/general.test
+```
+-rw-r--r-- 1 nobody nogroup 0 Oct 20 10:11 /nfs/general/general.test
+```
+
+sudo touch /nfs/home/home.test
+ls -l /nfs/home/home.test
+```
+-rw-r--r-- 1 root root 0 Oct 20 10:11 /nfs/home/home.test
+```
+
+sudo nano /etc/fstab
+```
+159.65.132.34:/var/nfs/general    /nfs/general   nfs auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0
+159.65.132.34:/home               /nfs/home      nfs auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0
+```
+
+mount -a
