@@ -16,7 +16,8 @@ spec:
         app: mysql
     spec:
       containers:
-        - image: mysql:5.7
+        - image: dockerframework/mysql:5.7
+          imagePullPolicy: Always
           name: mysql
           env:
             - name: MYSQL_ROOT_PASSWORD
@@ -27,10 +28,13 @@ spec:
           ports:
             - containerPort: 3306
               name: mysql
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
           volumeMounts:
-            - name: mysql-persistent-storage
+            - name: mysql-storage
               mountPath: /var/lib/mysql
+      dnsPolicy: ClusterFirst
       volumes:
-        - name: mysql-persistent-storage
+        - name: mysql-storage
           persistentVolumeClaim:
             claimName: mysql-volumeclaim
