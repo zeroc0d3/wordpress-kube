@@ -54,7 +54,7 @@ def get_var_as_bool(name, default):
 
 # Configurable as shell vars start
 
-CONFIG_FILE = os.environ.get("CONFIG_FILE", "./inventory/sample/hosts.ini")
+CONFIG_FILE = os.environ.get("CONFIG_FILE", "./inventory/mykube/hosts.ini")
 # Reconfigures cluster distribution at scale
 SCALE_THRESHOLD = int(os.environ.get("SCALE_THRESHOLD", 50))
 MASSIVE_SCALE_THRESHOLD = int(os.environ.get("SCALE_THRESHOLD", 200))
