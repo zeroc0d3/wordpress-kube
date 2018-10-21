@@ -3,18 +3,20 @@ HOST (159.65.132.34)
 sudo apt-get update
 sudo apt-get install nfs-kernel-server
 
-sudo mkdir /var/nfs/general -p
-ls -la /var/nfs/general
+sudo mkdir -p /mnt/vol_master/html
+sudo mkdir -p /mnt/vol_master/mysql
+
+ls -la /mnt/vol_master/html
 ```
 drwxr-xr-x 2 nobody nogroup 4096 Oct 20 10:11 .
 drwxr-xr-x 3 root   root    4096 Oct 20 10:02 ..
 ```
-sudo chown nobody:nogroup /var/nfs/general
+sudo chown nobody:nogroup /mnt/vol_master
 
 sudo nano /etc/exports
 ```
-/var/nfs/general   178.128.25.251(rw,sync,no_subtree_check)
-/home              178.128.25.251(rw,sync,no_root_squash,no_subtree_check)
+/mnt/vol_master/mysql    178.128.25.251(rw,sync,no_subtree_check)
+/mnt/vol_master/html     178.128.25.251(rw,sync,no_subtree_check)
 ```
 
 sudo systemctl restart nfs-kernel-server
@@ -42,11 +44,11 @@ sudo apt-get install nfs-common
 sudo ufw enable
 ufw allow "OpenSSH"
 
-sudo mkdir -p /nfs/general
-sudo mkdir -p /nfs/home
+sudo mkdir -p /nfs/html
+sudo mkdir -p /nfs/mysql
 
-sudo mount 159.65.132.34:/var/nfs/general /nfs/general
-sudo mount 159.65.132.34:/home /nfs/home
+sudo mount 159.65.132.34:/mnt/vol_master/html /nfs/html
+sudo mount 159.65.132.34:/mnt/vol_master/mysql /nfs/mysql
 
 df -h
 ```
@@ -55,33 +57,41 @@ udev                            992M     0  992M   0% /dev
 tmpfs                           201M  6.1M  194M   4% /run
 /dev/vda1                        49G  3.7G   45G   8% /
 ...
-159.65.132.34:/var/nfs/general   49G  3.6G   45G   8% /nfs/general
-159.65.132.34:/home              49G  3.6G   45G   8% /nfs/home
+159.65.132.34:/mnt/vol_master/mysql   50G   52M   47G   1% /nfs/mysql
+159.65.132.34:/mnt/vol_master/html    50G   52M   47G   1% /nfs/html
 ...
 ```
 
-du -sh /nfs/home
+du -sh /nfs/mysql
 ```
-4.0K	/nfs/home
+4.0    /nfs/mysql
 ```
 
 ## Testing ##
-sudo touch /nfs/general/general.test
-ls -l /nfs/general/general.test
+sudo touch /nfs/mysql/mysql.test
+ls -l /nfs/mysql/mysql.test
 ```
--rw-r--r-- 1 nobody nogroup 0 Oct 20 10:11 /nfs/general/general.test
+-rw-r--r-- 1 nobody nogroup 0 Oct 20 10:11 /nfs/mysql/mysql.test
 ```
 
-sudo touch /nfs/home/home.test
-ls -l /nfs/home/home.test
+sudo touch /nfs/html/html.test
+ls -l /nfs/html/html.test
 ```
--rw-r--r-- 1 root root 0 Oct 20 10:11 /nfs/home/home.test
+-rw-r--r-- 1 root root 0 Oct 20 10:11 /nfs/html/html.test
 ```
 
 sudo nano /etc/fstab
 ```
-159.65.132.34:/var/nfs/general    /nfs/general   nfs auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0
-159.65.132.34:/home               /nfs/home      nfs auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0
+159.65.132.34:/mnt/vol_master/mysql   /nfs/mysql   nfs   auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0
+159.65.132.34:/mnt/vol_master/html    /nfs/html    nfs   auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0
+```
+
+```
+root@wpkube-node1:~# cat /etc/fstab
+LABEL=cloudimg-rootfs                 /	           ext4  defaults   0 0
+LABEL=UEFI                            /boot/efi    vfat  defaults   0 0
+159.65.132.34:/mnt/vol_master/mysql   /nfs/mysql   nfs   auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0
+159.65.132.34:/mnt/vol_master/html    /nfs/html    nfs   auto,nofail,noatime,nolock,intr,tcp,actimeo=1800 0 0
 ```
 
 mount -a
