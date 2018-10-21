@@ -2,31 +2,31 @@
 ----------------------------
 ### Deploy
 ```
-ansible-playbook -i inventory/mykube/hosts.ini --become --become-user=root cluster.yml --flush-cache \
+ansible-playbook -i inventory/wpkube/hosts.ini --become --become-user=root cluster.yml --flush-cache \
    --private-key=/home/user/.ssh/id_rsa \
-   --limit node1,node2
+   --limit wpkube-master,wpkube-node1
 ```
 
 ### Reset
 ```
-ansible-playbook -i inventory/mykube/hosts.ini --become --become-user=root reset.yml --flush-cache \
+ansible-playbook -i inventory/wpkube/hosts.ini --become --become-user=root reset.yml --flush-cache \
    --private-key=/home/user/.ssh/id_rsa \
-   --limit node1,node2
+   --limit wpkube-master,wpkube-node1
 ```
 
 ### Remove-Node
 ```
-ansible-playbook -i inventory/mykube/hosts.ini --become --become-user=root remove-node.yml --flush-cache \
+ansible-playbook -i inventory/wpkube/hosts.ini --become --become-user=root remove-node.yml --flush-cache \
    --private-key=/home/user/.ssh/id_rsa \
-   --limit node1,node2
+   --limit wpkube-master,wpkube-node1
 ```
 
 ## Deploy Kubernetes
 ----------------------------
 ```
-ansible-playbook -i inventory/mykube/hosts.ini --become --become-user=root cluster.yml --flush-cache \
+ansible-playbook -i inventory/wpkube/hosts.ini --become --become-user=root cluster.yml --flush-cache \
    --private-key=/home/user/.ssh/id_rsa \
-   --limit node1,node2
+   --limit wpkube-master,wpkube-node1
 ```
 
 ## Check Master & Nodes
@@ -34,28 +34,28 @@ ansible-playbook -i inventory/mykube/hosts.ini --become --become-user=root clust
 ```
 ssh root@159.65.132.34
 
-root@node1:~# date
+root@wpkube-master:~# date
 Sat Oct 20 03:09:12 UTC 2018
-root@node1:~# kubectl get nodes
+root@wpkube-master:~# kubectl get nodes
 NAME    STATUS   ROLES    AGE     VERSION
-node1   Ready    master   6m34s   v1.12.1
-node2   Ready    node     6m33s   v1.12.1
+wpkube-master   Ready    master   6m34s   v1.12.1
+wpkube-node1    Ready    node     6m33s   v1.12.1
 
-root@node1:~# kubectl get po --all-namespaces
+root@wpkube-master:~# kubectl get po --all-namespaces
 NAMESPACE     NAME                                       READY   STATUS    RESTARTS   AGE
 kube-system   calico-kube-controllers-75ff955876-xzfpn   1/1     Running   0          4m52s
 kube-system   calico-node-dv4wd                          1/1     Running   0          5m8s
 kube-system   calico-node-rxqlx                          1/1     Running   0          5m8s
-kube-system   kube-apiserver-node1                       1/1     Running   0          5m47s
-kube-system   kube-controller-manager-node1              1/1     Running   0          6m25s
+kube-system   kube-apiserver-wpkube-master               1/1     Running   0          5m47s
+kube-system   kube-controller-manager-wpkube-master      1/1     Running   0          6m25s
 kube-system   kube-dns-5bff646c-nchbw                    3/3     Running   0          4m13s
 kube-system   kube-dns-5bff646c-tw66v                    0/3     Pending   0          4m1s
-kube-system   kube-proxy-node1                           1/1     Running   0          6m2s
-kube-system   kube-proxy-node2                           1/1     Running   0          6m11s
-kube-system   kube-scheduler-node1                       1/1     Running   0          6m30s
+kube-system   kube-proxy-wpkube-master                   1/1     Running   0          6m2s
+kube-system   kube-proxy-wpkube-node1                    1/1     Running   0          6m11s
+kube-system   kube-scheduler-wpkube-master               1/1     Running   0          6m30s
 kube-system   kubedns-autoscaler-d4fc847bf-q4th5         1/1     Running   0          4m8s
 kube-system   kubernetes-dashboard-5db4d9f45f-sgl5s      1/1     Running   0          4m3s
-kube-system   nginx-proxy-node2                          1/1     Running   0          6m6s
+kube-system   nginx-proxy-wpkube-node1                   1/1     Running   0          6m6s
 ```
 
 ## Create Access Login Dashboard
@@ -90,7 +90,7 @@ EOF
 ## Check Secret Token
 ----------------------------
 ```
-root@node1:~# kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
+root@wpkube-master:~# kubectl -n kube-system describe secret $(kubectl -n kube-system get secret | grep admin-user | awk '{print $1}')
 Name:         admin-user-token-kdjlm
 Namespace:    kube-system
 Labels:       <none>
@@ -109,7 +109,7 @@ token:      eyJhbGciOiJSUzI1NiIsImtpZCI6IiJ9.eyJpc3MiOiJrdWJlcm5ldGVzL3NlcnZpY2V
 ## Edit Services
 ----------------------------
 ```
-root@node1:~# kubectl -n kube-system edit service kubernetes-dashboard
+root@wpkube-master:~# kubectl -n kube-system edit service kubernetes-dashboard
 
 Change:
 -------
@@ -129,7 +129,7 @@ spec:
 ## Check Services
 ----------------------------
 ```
-root@node1:~# kubectl -n kube-system get service kubernetes-dashboard
+root@wpkube-master:~# kubectl -n kube-system get service kubernetes-dashboard
 NAME                   TYPE       CLUSTER-IP     EXTERNAL-IP   PORT(S)         AGE
 kubernetes-dashboard   NodePort   10.233.63.95   <none>        443:30114/TCP   3m49s
 ```
@@ -153,17 +153,17 @@ Install Wordpress
 ```
 kubectl create namespace <namespace name>
 ----------
-root@node1:~# kubectl create namespace wordpress
+root@wpkube-master:~# kubectl create namespace wordpress
 ```
 
 ## Create MySQL Secret, File: `mysql-secret.yml`
 ----------------------------
 ```
-root@node1:~# echo -n 'mys3cr3t' | base64
+root@wpkube-master:~# echo -n 'mys3cr3t' | base64
 >> bXlzM2NyM3Q=
 ```
 ```
-root@node1:~# nano yaml_file/mysql-secret.yml
+root@wpkube-master:~# nano yaml_file/mysql-secret.yml
 ```
 ```
 {
@@ -184,9 +184,9 @@ root@node1:~# nano yaml_file/mysql-secret.yml
   "type": "Opaque"
 }
 ```
-root@node1:~#   kubectl create -f yaml_file/mysql-secret.yml
+root@wpkube-master:~#   kubectl create -f yaml_file/mysql-secret.yml
 
-root@node1:~#   kubectl get secrets
+root@wpkube-master:~#   kubectl get secrets
 NAME                  TYPE                                  DATA   AGE
 default-token-rjf5w   kubernetes.io/service-account-token   3      26m
 mysql-pass            Opaque                                1      8s
@@ -195,7 +195,7 @@ mysql-pass            Opaque                                1      8s
 ## Create Persistant-Volume Wordpress & MySQL, File: `pv-wordpress-mysql.yml`
 ----------------------------
 ```
-root@node1:~# nano yaml_file/pv-wordpress-mysql.yml
+root@wpkube-master:~# nano yaml_file/pv-wordpress-mysql.yml
 ```
 ```
 # Create PersistentVolume
@@ -244,7 +244,7 @@ kubectl create -f yaml_file/pv-wordpress-mysql.yml
 ## Create Persistant-Volume-Claim Wordpress & MySQL, File: `pvc-wordpress-mysql.yml`
 ----------------------------
 ```
-root@node1:~# nano yaml_file/pvc-wordpress-mysql.yml
+root@wpkube-master:~# nano yaml_file/pvc-wordpress-mysql.yml
 ```
 ```
 apiVersion: v1
@@ -283,7 +283,7 @@ kubectl create -f yaml_file/pvc-wordpress-mysql.yml
 ## Create MySQL Deployment, File: `mysql-deployment.yaml`
 ----------------------------
 ```
-root@node1:~# nano yaml_file/mysql-deployment.yml
+root@wpkube-master:~# nano yaml_file/mysql-deployment.yml
 ```
 ```
 apiVersion: v1
@@ -348,7 +348,7 @@ kubectl create -f yaml_file/mysql-deployment.yml
 ## Create Wordpress Deployment, File: `wordpress-deployment.yaml`
 ----------------------------
 ```
-root@node1:~# nano yaml_file/mysql-deployment.yml
+root@wpkube-master:~# nano yaml_file/mysql-deployment.yml
 ```
 ```
 # create a service for wordpress

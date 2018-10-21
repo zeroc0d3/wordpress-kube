@@ -67,7 +67,7 @@ bin_dir: /usr/local/bin
 ## This setting determines whether certs are generated via scripts or whether a
 ## cluster of Hashicorp's Vault is started to issue certificates (using etcd
 ## as a backend). Options are "script" or "vault"
-#cert_management: script
+cert_management: script
 
 ## Set to true to allow pre-checks to fail and continue deployment
 #ignore_assert_errors: false
