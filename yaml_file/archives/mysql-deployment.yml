@@ -2,7 +2,7 @@ apiVersion: v1
 kind: Service
 metadata:
   namespace: wordpress
-  name: wordpress-mysql   # will be used as a value in
+  name: mysql             # will be used as a value in
   labels:                 # WORDPRESS_DB_HOST in wordpress-deploy.yml
     app: wordpress
 spec:
@@ -11,13 +11,12 @@ spec:
   selector:
     app: wordpress
     tier: mysql
-  clusterIP: None
 ---
 apiVersion:  apps/v1beta2 # for versions before 1.9.0 use apps/v1beta2
 kind: Deployment
 metadata:
   namespace: wordpress
-  name: wordpress-mysql
+  name: mysql
   labels:
     app: wordpress
 spec:
@@ -34,7 +33,7 @@ spec:
         tier: mysql
     spec:
       containers:
-      - image: mysql:5.6
+      - image: mysql:5.7
         name: mysql
         env:
         - name: MYSQL_ROOT_PASSWORD
@@ -51,4 +50,4 @@ spec:
       volumes:
       - name: mysql-persistent-storage    # PVC
         persistentVolumeClaim:
-          claimName: mysql-persistent-storage
+          claimName: mysql-volumeclaim

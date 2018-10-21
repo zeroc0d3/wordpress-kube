@@ -1,0 +1,38 @@
+# Create PersistentVolume
+# change the ip of NFS server
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: wordpress
+  name: wordpress-persistent-storage
+  labels:
+    app: wordpress
+    tier: frontend
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 178.128.25.251
+    # Exported path of your NFS server
+    path: "/mnt/vol_node1/html"
+
+---
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  namespace: wordpress
+  name: mysql-persistent-storage
+  labels:
+    app: wordpress
+    tier: mysql
+spec:
+  capacity:
+    storage: 20Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 178.128.25.251
+    # Exported path of your NFS server
+    path: "/mnt/vol_node1/mysql"
