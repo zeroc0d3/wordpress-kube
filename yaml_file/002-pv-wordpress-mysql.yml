@@ -1,6 +1,5 @@
 # Create PersistentVolume
 # change the ip of NFS server
----
 apiVersion: v1
 kind: PersistentVolume
 metadata:
