@@ -6,6 +6,13 @@ sudo apt-get install nfs-kernel-server
 sudo mkdir -p /mnt/vol_master/html
 sudo mkdir -p /mnt/vol_master/mysql
 
+nano /etc/fstab
+```
+LABEL=cloudimg-rootfs                         /                 ext4   defaults   0 0
+LABEL=UEFI                                    /boot/efi         vfat   defaults   0 0
+UUID="ce8b1e59-b692-482a-9df8-09032090c529"   /mnt/vol_master   ext4   defaults   0 0
+```
+
 ls -la /mnt/vol_master/html
 ```
 drwxr-xr-x 2 nobody nogroup 4096 Oct 20 10:11 .
@@ -15,8 +22,8 @@ sudo chown nobody:nogroup /mnt/vol_master
 
 sudo nano /etc/exports
 ```
-/mnt/vol_master/mysql    178.128.25.251(rw,sync,no_subtree_check)
-/mnt/vol_master/html     178.128.25.251(rw,sync,no_subtree_check)
+/mnt/vol_master/mysql    178.128.25.0/255.255.0.0(rw,sync,no_subtree_check,no_root_squash)
+/mnt/vol_master/html     178.128.25.0/255.255.0.0(rw,sync,no_subtree_check,no_root_squash)
 ```
 
 sudo systemctl restart nfs-kernel-server
@@ -95,3 +102,16 @@ LABEL=UEFI                            /boot/efi    vfat  defaults   0 0
 ```
 
 mount -a
+
+
+NOTES !!!
+-------------
+DISABLE Firewall if you want to deploy kubernetes cluster (via Kubespray)
+```
+sudo ufw disable
+```
+
+Re-enable after finish deploy
+```
+sudo ufw enable
+```
