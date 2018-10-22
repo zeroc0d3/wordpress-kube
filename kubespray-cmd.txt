@@ -160,7 +160,10 @@ root@wpkube-master:~# kubectl create namespace wordpress
 ----------------------------
 ```
 root@wpkube-master:~# echo -n 'mys3cr3t' | base64
->> bXlzM2NyM3Q=
+bXlzM2NyM3Q=
+
+root@wpkube-master:~# echo -n 'root' | base64
+cm9vdA==
 ```
 ```
 root@wpkube-master:~# nano yaml_file/mysql-secret.yml
@@ -179,7 +182,7 @@ root@wpkube-master:~# nano yaml_file/mysql-secret.yml
   },
   "data": {
     "password": "bXlzM2NyM3Q=",
-    "username": "root"
+    "username": "cm9vdA=="
   },
   "type": "Opaque"
 }
@@ -204,38 +207,40 @@ apiVersion: v1
 kind: PersistentVolume
 metadata:
   namespace: wordpress
-  name: wordpress-persistent-storage
+  name: wordpress-storage
   labels:
     app: wordpress
     tier: frontend
 spec:
   capacity:
-    storage: 10Gi
+    storage: 20Gi
   accessModes:
     - ReadWriteMany
   nfs:
     server: 159.65.132.34
     # Exported path of your NFS server
-    path: "/html"
+    path: "/mnt/vol_master/html"
+  persistentVolumeReclaimPolicy: Recycle
 
 ---
 apiVersion: v1
 kind: PersistentVolume
 metadata:
   namespace: wordpress
-  name: mysql-persistent-storage
+  name: mysql-storage
   labels:
     app: wordpress
     tier: mysql
 spec:
   capacity:
-    storage: 10Gi
+    storage: 20Gi
   accessModes:
     - ReadWriteMany
   nfs:
     server: 159.65.132.34
     # Exported path of your NFS server
-    path: "/mysql"
+    path: "/mnt/vol_master/mysql"
+  persistentVolumeReclaimPolicy: Recycle
 ```
 ```
 kubectl create -f yaml_file/pv-wordpress-mysql.yml
@@ -251,7 +256,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   namespace: wordpress
-  name: mysql-persistent-storage
+  name: wordpress-volumeclaim
   labels:
     app: wordpress
 spec:
@@ -259,14 +264,13 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 6Gi
-
+      storage: 10Gi
 ---
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   namespace: wordpress
-  name: wordpress-persistent-storage
+  name: mysql-volumeclaim
   labels:
     app: wordpress
 spec:
@@ -274,7 +278,7 @@ spec:
     - ReadWriteMany
   resources:
     requests:
-      storage: 6Gi
+      storage: 10Gi
 ```
 ```
 kubectl create -f yaml_file/pvc-wordpress-mysql.yml
@@ -286,88 +290,82 @@ kubectl create -f yaml_file/pvc-wordpress-mysql.yml
 root@wpkube-master:~# nano yaml_file/mysql-deployment.yml
 ```
 ```
-apiVersion: v1
-kind: Service
-metadata:
-  namespace: wordpress
-  name: wordpress-mysql   # will be used as a value in
-  labels:                 # WORDPRESS_DB_HOST in wordpress-deploy.yml
-    app: wordpress
-spec:
-  ports:
-    - port: 3306
-  selector:
-    app: wordpress
-    tier: mysql
-  clusterIP: None
----
-apiVersion:  apps/v1beta2 # for versions before 1.9.0 use apps/v1beta2
+apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   namespace: wordpress
-  name: wordpress-mysql
+  name: mysql
   labels:
-    app: wordpress
+    app: mysql
 spec:
+  replicas: 1
   selector:
     matchLabels:
-      app: wordpress
-      tier: mysql
-  strategy:
-    type: Recreate
+      app: mysql
   template:
     metadata:
       labels:
-        app: wordpress
-        tier: mysql
+        app: mysql
     spec:
       containers:
-      - image: mysql:5.6
-        name: mysql
-        env:
-        - name: MYSQL_ROOT_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mysql-pass        # the one generated before in secret.yml
-              key: password
-        ports:
-        - containerPort: 3306
+        - image: dockerframework/mysql:5.7
+          imagePullPolicy: Always
           name: mysql
-        volumeMounts:
-        - name: mysql-persistent-storage  # which data will be stored
-          mountPath: "/var/lib/mysql"
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-pass
+                  key: password
+          ports:
+            - containerPort: 3306
+              name: mysql
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          volumeMounts:
+            - name: mysql-storage
+              mountPath: /var/lib/mysql
+      dnsPolicy: ClusterFirst
       volumes:
-      - name: mysql-persistent-storage    # PVC
-        persistentVolumeClaim:
-          claimName: mysql-persistent-storage
+        - name: mysql-storage
+          persistentVolumeClaim:
+            claimName: mysql-volumeclaim
 ```
 ```
 kubectl create -f yaml_file/mysql-deployment.yml
 ```
 
-## Create Wordpress Deployment, File: `wordpress-deployment.yaml`
+## Create MySQL Service, File: `mysql-service.yaml`
 ----------------------------
 ```
-root@wpkube-master:~# nano yaml_file/mysql-deployment.yml
+root@wpkube-master:~# nano yaml_file/mysql-service.yml
 ```
 ```
-# create a service for wordpress
 apiVersion: v1
 kind: Service
 metadata:
   namespace: wordpress
-  name: wordpress
+  name: mysql
   labels:
-    app: wordpress
+    app: mysql
 spec:
-  ports:
-    - port: 80
-  selector:
-    app: wordpress
-    tier: frontend
   type: ClusterIP
----
-apiVersion: apps/v1beta2 # for versions before 1.9.0 use apps/v1beta2
+  ports:
+    - port: 3306
+  selector:
+    app: mysql
+```
+```
+kubectl create -f yaml_file/mysql-service.yml
+```
+
+## Create Wordpress Deployment, File: `wordpress-deployment.yaml`
+----------------------------
+```
+root@wpkube-master:~# nano yaml_file/wordpress-deployment.yml
+```
+```
+apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   namespace: wordpress
@@ -375,40 +373,69 @@ metadata:
   labels:
     app: wordpress
 spec:
+  replicas: 1
   selector:
     matchLabels:
       app: wordpress
-      tier: frontend
-  strategy:
-    type: Recreate
   template:
     metadata:
       labels:
         app: wordpress
-        tier: frontend
     spec:
       containers:
-      - image: wordpress:4.8-apache
-        name: wordpress
-        env:
-        - name: WORDPRESS_DB_HOST
-          value: wordpress-mysql
-        - name: WORDPRESS_DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: mysql-pass          # generated before in secret.yml
-              key: password
-        ports:
-        - containerPort: 80
+        - image: wordpress
           name: wordpress
-        volumeMounts:
-        - name: wordpress-persistent-storage
-          mountPath: "/var/www/html"          # which data will be stored
+          env:
+          - name: WORDPRESS_DB_HOST
+            value: mysql:3306
+          - name: WORDPRESS_DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: mysql-pass
+                key: username
+          - name: WORDPRESS_DB_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: mysql-pass
+                key: password
+          ports:
+            - containerPort: 80
+              name: wordpress
+          volumeMounts:
+            - name: wordpress-storage
+              mountPath: /var/www/html
       volumes:
-      - name: wordpress-persistent-storage
-        persistentVolumeClaim:
-          claimName: wordpress-persistent-storage
+        - name: wordpress-storage
+          persistentVolumeClaim:
+            claimName: wordpress-volumeclaim
 ```
 ```
 kubectl create -f yaml_file/wordpress-deployment.yml
+```
+
+## Create Wordpress Service, File: `wordpress-service.yaml`
+----------------------------
+```
+root@wpkube-master:~# nano yaml_file/wordpress-service.yml
+```
+```
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: wordpress
+  labels:
+    app: wordpress
+  name: wordpress
+spec:
+  #type: LoadBalancer
+  type: ClusterIP
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+  selector:
+    app: wordpress
+```
+```
+kubectl create -f yaml_file/wordpress-service.yml
 ```

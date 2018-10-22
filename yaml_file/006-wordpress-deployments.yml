@@ -21,6 +21,11 @@ spec:
           env:
           - name: WORDPRESS_DB_HOST
             value: mysql:3306
+          - name: WORDPRESS_DB_USER
+            valueFrom:
+              secretKeyRef:
+                name: mysql-pass
+                key: username
           - name: WORDPRESS_DB_PASSWORD
             valueFrom:
               secretKeyRef:
